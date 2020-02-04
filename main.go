@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	rpc "github.com/binance-chain/go-sdk/client/rpc"
@@ -38,8 +40,7 @@ func getSDKNodeInfo(key keys.KeyManager) PersonalTranscation {
 }
 
 func getRPCNodeInfo(address types.AccAddress) PersonalTranscation {
-	// use this once your node is fully synced.
-	clientRPC := rpc.NewRPCClient("localhost:26657", types.TestNetwork)
+	clientRPC := rpc.NewRPCClient("http://localhost:27147", types.TestNetwork)
 
 	account, err := clientRPC.GetAccount(address)
 	if err != nil {
@@ -52,8 +53,6 @@ func getRPCNodeInfo(address types.AccAddress) PersonalTranscation {
 }
 
 func main() {
-	// tbnb16hgptucs93skwsy6tdvl5p6kl3rq6x57s0jqdg
-	//key, _ := keys.NewKeyStoreKeyManager("/home/sebas/Documents/binance.json", "")
 	dat, err := ioutil.ReadFile("pk")
 	if err != nil {
 		panic(err)
@@ -64,10 +63,13 @@ func main() {
 	mess := []msg.Msg{
 		msg.CreateSendMsg(key.GetAddr(), types.Coins{types.Coin{Denom: "BNB", Amount: 1}}, []msg.Transfer{{key.GetAddr(), types.Coins{types.Coin{Denom: "BNB", Amount: 1}}}}),
 	}
+	fmt.Println("Sup")
 
-	personalTxn := getRPCNodeInfo(key.GetAddr())
+	//personalTxn := getRPCNodeInfo(key.GetAddr())
+	personalTxn := getSDKNodeInfo(key)
 
 	fmt.Println(personalTxn)
+	fmt.Println("Sup")
 
 	m := tx.StdSignMsg{
 		Msgs:          mess,
@@ -86,20 +88,18 @@ func main() {
 		panic(err)
 	}
 
-	/*
-		url := fmt.Sprintf("http://localhost:26657/broadcast_tx_sync?tx=0x%s", hex.EncodeToString(signed))
-		fmt.Println(url)
-		var buffer []byte
-		httpResponse, err := http.Post(url, "application/json", bytes.NewBuffer(buffer))
-		if err != nil {
-			panic(err)
-		}
-		defer httpResponse.Body.Close()
-		bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("Response: %+v\n", string(bodyBytes))
-		fmt.Printf("Buffer: %+v\n", hex.EncodeToString(buffer))
-	*/
+	url := fmt.Sprintf("http://localhost:27147/broadcast_tx_sync?tx=0x%s", hex.EncodeToString(signed))
+	fmt.Println(url)
+	var buffer []byte
+	httpResponse, err := http.Post(url, "application/json", bytes.NewBuffer(buffer))
+	if err != nil {
+		panic(err)
+	}
+	defer httpResponse.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(httpResponse.Body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Response: %+v\n", string(bodyBytes))
+	fmt.Printf("Buffer: %+v\n", hex.EncodeToString(buffer))
 }
